@@ -1,4 +1,4 @@
-import { Context, Schema } from 'koishi'
+import { Context, Schema, $ } from 'koishi'
 import { } from 'koishi-plugin-monetary'
 
 export const name = 'monetary-admin'
@@ -57,7 +57,13 @@ export function apply(ctx: Context) {
         if (!amount) return '请输入金额。'
         if (amount <= 0) return '金额必须为正数。'
 
-        await ctx.monetary.gain(uid, amount, currency)
+        // 直接使用数据库 upsert，避免 monetary.gain() 的 bug
+        await ctx.database.upsert('monetary', (row) => [{
+          uid,
+          currency,
+          value: $.add(row.value, amount),
+        }], ['uid', 'currency'])
+
         return `成功给用户 ${name} (UID: ${uid}) 添加了 ${amount} ${currency}。`
       } catch (e) {
         return typeof e === 'string' ? e : `添加失败: ${e.message}`
@@ -85,7 +91,13 @@ export function apply(ctx: Context) {
         if (!amount) return '请输入金额。'
         if (amount <= 0) return '金额必须为正数。'
 
-        await ctx.monetary.gain(uid, -amount, currency)
+        // 直接使用数据库 upsert，避免 monetary.gain() 的 bug
+        await ctx.database.upsert('monetary', (row) => [{
+          uid,
+          currency,
+          value: $.sub(row.value, amount),
+        }], ['uid', 'currency'])
+
         return `成功从用户 ${name} (UID: ${uid}) 扣除了 ${amount} ${currency}。`
       } catch (e) {
         return typeof e === 'string' ? e : `扣除失败: ${e.message}`
