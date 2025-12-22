@@ -36,10 +36,23 @@ export function apply(ctx: Context) {
   }
 
 
-  ctx.command('monetary.add <target:user> <currency:string> <amount:number>', '给目标用户添加货币', { authority: 5 })
+  ctx.command('monetary.add [target:user] <currency:string> <amount:number>', '给目标用户添加货币', { authority: 5 })
+    .userFields(['id'])
     .action(async ({ session }, target, currency, amount) => {
       try {
-        const { uid, name } = await resolveUser(target)
+        let uid: number, name: string
+
+        if (!target) {
+          // 如果没有指定目标，则给自己添加
+          if (!session?.user?.id) return '无法获取您的用户信息。'
+          uid = session.user.id
+          name = session.username || String(uid)
+        } else {
+          const resolved = await resolveUser(target)
+          uid = resolved.uid
+          name = resolved.name
+        }
+
         if (!currency) return '请输入货币类型。'
         if (!amount) return '请输入金额。'
         if (amount <= 0) return '金额必须为正数。'
@@ -51,11 +64,23 @@ export function apply(ctx: Context) {
       }
     })
 
-  ctx.command('monetary.reduce <target:user> <currency:string> <amount:number>', '扣除目标用户货币', { authority: 5 })
+  ctx.command('monetary.reduce [target:user] <currency:string> <amount:number>', '扣除目标用户货币', { authority: 5 })
     .alias('扣款')
+    .userFields(['id'])
     .action(async ({ session }, target, currency, amount) => {
       try {
-        const { uid, name } = await resolveUser(target)
+        let uid: number, name: string
+
+        if (!target) {
+          if (!session?.user?.id) return '无法获取您的用户信息。'
+          uid = session.user.id
+          name = session.username || String(uid)
+        } else {
+          const resolved = await resolveUser(target)
+          uid = resolved.uid
+          name = resolved.name
+        }
+
         if (!currency) return '请输入货币类型。'
         if (!amount) return '请输入金额。'
         if (amount <= 0) return '金额必须为正数。'
@@ -67,11 +92,23 @@ export function apply(ctx: Context) {
       }
     })
 
-  ctx.command('monetary.clear <target:user> <currency:string>', '清零目标用户指定货币', { authority: 5 })
+  ctx.command('monetary.clear [target:user] <currency:string>', '清零目标用户指定货币', { authority: 5 })
     .alias('清零')
+    .userFields(['id'])
     .action(async ({ session }, target, currency) => {
       try {
-        const { uid, name } = await resolveUser(target)
+        let uid: number, name: string
+
+        if (!target) {
+          if (!session?.user?.id) return '无法获取您的用户信息。'
+          uid = session.user.id
+          name = session.username || String(uid)
+        } else {
+          const resolved = await resolveUser(target)
+          uid = resolved.uid
+          name = resolved.name
+        }
+
         if (!currency) return '请输入货币类型。'
 
         await ctx.database.set('monetary', { uid, currency }, { value: 0 })
@@ -99,11 +136,22 @@ export function apply(ctx: Context) {
       }
     })
 
-  ctx.command('monetary.balance <target:user>', '查询目标用户的货币余额', { authority: 1 })
+  ctx.command('monetary.balance [target:user]', '查询目标用户的货币余额', { authority: 1 })
     .alias('查询余额')
+    .userFields(['id'])
     .action(async ({ session }, target) => {
       try {
-        const { uid, name } = await resolveUser(target)
+        let uid: number, name: string
+
+        if (!target) {
+          if (!session?.user?.id) return '无法获取您的用户信息。'
+          uid = session.user.id
+          name = session.username || '您'
+        } else {
+          const resolved = await resolveUser(target)
+          uid = resolved.uid
+          name = resolved.name
+        }
 
         const monetaryRecords = await ctx.database.get('monetary', { uid })
         if (monetaryRecords.length === 0) {
