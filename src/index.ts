@@ -178,8 +178,7 @@ export function apply(ctx: Context) {
         if (!session?.user?.id) return '无法获取您的用户信息。'
         if (!currency) return '请输入货币类型。'
         if (!amount) return '请输入金额。'
-        if (amount <= 0) return '转账金额必须为正数。'
-        if (amount > 100000) return '转账金额不能超过 100000。'
+        if (amount <= 0 || amount > 100000) return '转账金额必须在 1 到 100000 之间。'
 
         const senderUid = session.user.id
         const { uid: targetUid, name: targetName } = await resolveUser(target)
